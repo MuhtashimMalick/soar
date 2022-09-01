@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "muhtashim",
+    "password": "8864",
+    "database": "dragNdrop",
+    "host": "127.0.0.1",
+    "dialect": "mariadb"
+  },
+  "test": {
+    "username": "muhtashim",
+    "password": 8864,
+    "database": "dragNdrop",
+    "host": "127.0.0.1",
+    "dialect": "mariadb"
+  },
+  "production": {
+    "username": "muhtashim",
+    "password": 8864,
+    "database": "dragNdrop",
+    "host": "127.0.0.1",
+    "dialect": "mariadb"
+  }
+}
