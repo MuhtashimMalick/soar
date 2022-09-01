@@ -1,0 +1,677 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>NCCS - SOAR</title>
+  <meta name="description"
+    content="Simple library for flow programming. Drawflow allows you to create data flows easily and quickly.">
+</head>
+
+<body> -->
+<%- include("navbar.ejs")%>
+  <script src="https://cdn.jsdelivr.net/gh/jerosoler/Drawflow/dist/drawflow.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js"
+    integrity="sha256-KzZiKy0DWYsnwMF+X1DvQngQ2/FxF7MF3Ff72XcpuPs=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jerosoler/Drawflow@0.0.48/dist/drawflow.min.css">
+  <link rel="stylesheet" type="text/css" href="/stylesheets/beautiful.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css"
+    integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+  <script src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+  <div class="wrapper">
+    <div id="loading" class="div-loader hide">
+      <div >
+        <div class="loader"></div>
+        <p>executing...</p>
+      </div>
+    </div>
+
+    <div id="leftcol" class="col">
+      <div class="dropdown">
+        <button onclick="myFunction()" class="dropbtn"><i class="fab fa-linux"></i><span> Linux Playbooks </span><i
+            class="fas fa-caret-down"></i></button>
+        <div id="myDropdown" class="dropdown-content ">
+          <% linux_playbooks.forEach(function(playbook){ %>
+            <div class="drag-drawflow left-pad" draggable="true" ondragstart="drag(event)"
+              data-node=<%=playbook.playbook_class_name %>>
+              <i class="fab fa-linux"></i><span>
+                <%= playbook.playbook_display_name %>
+              </span>
+            </div>
+            <% }) %>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button onclick="myFunctionWindows()" class="dropbtnwindows"><i class="fab fa-windows"></i> Windows Playbooks <i
+            class="fas fa-caret-down"></i></button>
+        <div id="myDropdownWindows" class="dropdown-content ">
+          <% windows_playbooks.forEach(function(playbook){ %>
+            <div class="drag-drawflow left-pad" draggable="true" ondragstart="drag(event)"
+              data-node=<%=playbook.playbook_class_name %>>
+              <i class="fab fa-windows"></i><span>
+                <%= playbook.playbook_display_name %>
+              </span>
+            </div>
+            <% }) %>
+        </div>
+      </div>
+
+      <div class="dropdown">
+        <button onclick="myFunctionOther()" class="dropbtnother"><i class="fas fa-scroll"></i> Other Playbooks <i
+            class="fas fa-caret-down"></i></button>
+        <div id="myDropdownOther" class="dropdown-content">
+          <% other_playbooks.forEach(function(playbook){ %>
+            <div class="drag-drawflow left-pad" draggable="true" ondragstart="drag(event)"
+              data-node=<%=playbook.playbook_class_name %>>
+              <i class="fas fa-scroll"></i><span>
+                <%= playbook.playbook_display_name %>
+              </span>
+            </div>
+            <% }) %>
+        </div>
+      </div>
+
+    </div>
+    <div id="rightcol" class="col-right">
+      <!-- <div class="menu">
+      <ul>
+        <li onclick="editor.changeModule('Home'); changeModule(event);" class="selected">Home</li>
+        <li onclick="editor.changeModule('Other'); changeModule(event);">Other Module</li>
+      </ul>
+    </div> -->
+      <div id="drawflow" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <!-- <div class="btn-export" onclick="Swal.fire({ title: 'Export',
+        html: '<pre><code>'+JSON.stringify(editor.export(), null,4)+'</code></pre>'
+        })">Export</div> -->
+
+        <div class="btn-export" onclick="handleExport()">Execute</div>
+        <div class="btn-clear" onclick="editor.clearModuleSelected()">Clear</div>
+        <div class="btn-lock">
+          <i id="lock" class="fas fa-lock" onclick="editor.editor_mode='fixed'; changeMode('lock');"></i>
+          <i id="unlock" class="fas fa-lock-open" onclick="editor.editor_mode='edit'; changeMode('unlock');"
+            style="display:none;"></i>
+        </div>
+        <div class="bar-zoom">
+          <i class="fas fa-search-minus" onclick="editor.zoom_out()"></i>
+          <i class="fas fa-search" onclick="editor.zoom_reset()"></i>
+          <i class="fas fa-search-plus" onclick="editor.zoom_in()"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const handleExport = () => {
+      const exportdata = editor.export()
+      console.log(exportdata.drawflow.Home.data)
+      showLoading()
+      fetch('http://localhost:3000/', {
+        method: 'POST',
+        body: JSON.stringify(exportdata.drawflow.Home.data),
+        headers: {
+          'Content-type': 'application/json; charset=UTF-8'
+        }
+      }).then(function (response) {
+        if (response.ok) {
+          window.location.href = '/playbook_logs/1'
+          return response.json();
+        }
+        return Promise.reject(response);
+      }).then(function (data) {
+        console.log('data', data);
+      }).catch(function (error) {
+        console.warn('Something went wrong.', error);
+      });
+    }
+
+    /* When the user clicks on the button,
+  toggle between hiding and showing the dropdown content */
+    function myFunction() {
+      document.getElementById("myDropdown").classList.toggle("show");
+    }
+    function myFunctionWindows() {
+      document.getElementById("myDropdownWindows").classList.toggle("show");
+    }
+    function myFunctionOther() {
+      document.getElementById("myDropdownOther").classList.toggle("show");
+    }
+    function showParameter(id) {
+      document.getElementById(id).classList.toggle("show");
+    }
+    function showLoading() {
+      document.getElementById("leftcol").classList.toggle("hide");
+      document.getElementById("rightcol").classList.toggle("hide");
+      document.getElementById("loading").classList.toggle("hide");
+    }
+
+    var id = document.getElementById("drawflow");
+    const editor = new Drawflow(id);
+    editor.reroute = true;
+    editor.start();
+    // editor.import(dataToImport);
+
+    //editor.addNode(name, inputs, outputs, posx, posy, class, data, html);
+    /*editor.addNode('welcome', 0, 0, 50, 50, 'welcome', {}, welcome );
+    editor.addModule('Other');
+    */
+
+    // Events!
+    editor.on('nodeCreated', function (id) {
+      console.log("Node created " + id);
+    })
+
+    editor.on('nodeRemoved', function (id) {
+      console.log("Node removed " + id);
+    })
+
+    editor.on('nodeSelected', function (id) {
+      console.log("Node selected " + id);
+    })
+
+    editor.on('moduleCreated', function (name) {
+      console.log("Module Created " + name);
+    })
+
+    editor.on('moduleChanged', function (name) {
+      console.log("Module Changed " + name);
+    })
+
+    editor.on('connectionCreated', function (connection) {
+      console.log('Connection created');
+      console.log(connection);
+    })
+
+    editor.on('connectionRemoved', function (connection) {
+      console.log('Connection removed');
+      console.log(connection);
+    })
+
+    editor.on('mouseMove', function (position) {
+      // console.log('Position mouse x:' + position.x + ' y:' + position.y);
+    })
+
+    editor.on('nodeMoved', function (id) {
+      console.log("Node moved " + id);
+    })
+
+    editor.on('zoom', function (zoom) {
+      console.log('Zoom level ' + zoom);
+    })
+
+    editor.on('translate', function (position) {
+      console.log('Translate x:' + position.x + ' y:' + position.y);
+    })
+
+    editor.on('addReroute', function (id) {
+      console.log("Reroute added " + id);
+    })
+
+    editor.on('removeReroute', function (id) {
+      console.log("Reroute removed " + id);
+    })
+
+    /* DRAG EVENT */
+
+    /* Mouse and Touch Actions */
+
+    var elements = document.getElementsByClassName('drag-drawflow');
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].addEventListener('touchend', drop, false);
+      elements[i].addEventListener('touchmove', positionMobile, false);
+      elements[i].addEventListener('touchstart', drag, false);
+    }
+
+    var mobile_item_selec = '';
+    var mobile_last_move = null;
+    function positionMobile(ev) {
+      mobile_last_move = ev;
+    }
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      if (ev.type === "touchstart") {
+        mobile_item_selec = ev.target.closest(".drag-drawflow").getAttribute('data-node');
+      } else {
+        ev.dataTransfer.setData("node", ev.target.getAttribute('data-node'));
+      }
+    }
+
+    function drop(ev) {
+      if (ev.type === "touchend") {
+        var parentdrawflow = document.elementFromPoint(mobile_last_move.touches[0].clientX, mobile_last_move.touches[0].clientY).closest("#drawflow");
+        if (parentdrawflow != null) {
+          addNodeToDrawFlow(mobile_item_selec, mobile_last_move.touches[0].clientX, mobile_last_move.touches[0].clientY);
+        }
+        mobile_item_selec = '';
+      } else {
+        ev.preventDefault();
+        var data = ev.dataTransfer.getData("node");
+        addNodeToDrawFlow(data, ev.clientX, ev.clientY);
+      }
+    }
+
+
+    function addNodeToDrawFlow(name, pos_x, pos_y) {
+      if (editor.editor_mode === 'fixed') {
+        return false;
+      }
+      pos_x = pos_x * (editor.precanvas.clientWidth / (editor.precanvas.clientWidth * editor.zoom)) - (editor.precanvas.getBoundingClientRect().x * (editor.precanvas.clientWidth / (editor.precanvas.clientWidth * editor.zoom)));
+      pos_y = pos_y * (editor.precanvas.clientHeight / (editor.precanvas.clientHeight * editor.zoom)) - (editor.precanvas.getBoundingClientRect().y * (editor.precanvas.clientHeight / (editor.precanvas.clientHeight * editor.zoom)));
+
+
+      switch (name) {
+        case name:
+          var uniqueID = Math.random().toString(36).substring(2, 7)
+          var linuxPlaybooks = <%- JSON.stringify(linux_playbooks) %>;
+          var windowsPlaybooks = <%- JSON.stringify(windows_playbooks) %>;
+          var otherPlaybooks = <%- JSON.stringify(other_playbooks) %>;
+          var linux = linuxPlaybooks.filter((p) => { return name === p.playbook_class_name })
+          var windows = windowsPlaybooks.filter((p) => { return name === p.playbook_class_name })
+          var other = otherPlaybooks.filter((p) => { return name === p.playbook_class_name })
+          if (linux.length > 0) {
+            var linuxPlaybookHtml = atob(linux[0].playbook_html).replace(/uniqueID/g, uniqueID)
+            editor.addNode(linux[0].playbook_name, linux[0].playbook_inputs, linux[0].playbook_outputs, pos_x, pos_y, linux[0].playbook_class_name, { display_name: linux[0].playbook_display_name, path: linux[0].playbook_path, vault_pass: linux[0].playbook_vault_password_path, module_path: linux[0].playbook_module_path }, linuxPlaybookHtml);
+            break;
+          }
+          if (windows.length > 0) {
+            var windowsPlaybookHtml = atob(windows[0].playbook_html).replace(/uniqueID/g, uniqueID)
+            editor.addNode(windows[0].playbook_name, windows[0].playbook_inputs, windows[0].playbook_outputs, pos_x, pos_y, windows[0].playbook_class_name, { display_name: windows[0].playbook_display_name, path: windows[0].playbook_path, vault_pass: windows[0].playbook_vault_password_path, module_path: windows[0].playbook_module_path }, windowsPlaybookHtml);
+            break;
+          }
+          if (other.length > 0) {
+            var otherPlaybookHtml = atob(other[0].playbook_html).replace(/uniqueID/g, uniqueID)
+            editor.addNode(other[0].playbook_name, other[0].playbook_inputs, other[0].playbook_outputs, pos_x, pos_y, other[0].playbook_class_name, { display_name: other[0].playbook_display_name, path: other[0].playbook_path, vault_pass: other[0].playbook_vault_password_path, module_path: other[0].playbook_module_path }, otherPlaybookHtml);
+            break;
+          }
+        default:
+      }
+    }
+
+
+    //   case 'test':
+    //     var test = `
+    //     <div>
+    //   <div class="title-box"><i class="fab fa-linux "></i> Process List </div>
+    //   <div>
+    //     <button class="dropbtnparameters" onclick="showParameter('uniqueID')"> Parameters </button>
+    //     <div id=uniqueID class="dropdown-content-parameters">
+    //       <div class="box">
+    //         <p>Hosts</p>
+    //         <input type="text" placeholder="host1:host2" df-host_names>
+    //       </div>
+    //     </div>
+    //   </div>
+    // </div>
+    // `;
+    //     editor.addNode('global.yaml', 1, 1, pos_x, pos_y, 'test', {}, test);
+    //     break;
+
+    // <div class="box">
+    //         <p>File Path</p>
+    //         <input type="text" placeholder="/home/sam/ " df-file_path>
+    //       </div>
+    //       <div class="box">
+    //         <p>File Name</p>
+    //         <input type="text" placeholder="file.txt " df-file_name>
+    //       </div>
+
+    /* case 'locking_windows_host':
+       var locking_windows_host = `
+   <div>
+     <div class="title-box"><i class="fab fa-linux"></i> Process Dump </div>
+     <div>
+       <button class="dropbtnparameters" onclick="showParameter('uniqueID')"> Parameters </button>
+       <div id=uniqueID class="dropdown-content-parameters">
+         <div class="box">
+           <p>Hosts</p>
+           <input type="text" placeholder="host1:host2" df-host_names>
+         </div>
+         <div class="box">
+           <p>Process ID</p>
+           <input type="text" placeholder="4700" df-process_id>
+         </div>
+         <div class="box">
+           <p>File Name</p>
+           <input type="text" placeholder="chrome" df-file_name>
+         </div>
+       </div>
+     </div>
+   </div>
+   `;
+       editor.addNode('process_ports_linux.yaml', 1, 1, pos_x, pos_y, 'windows', { path: '/home/sam/' }, windows);
+       break; */
+    // <div>
+    //     <div class="title-box"><i class="fab fa-linux"></i> Lock Hosts </div>
+    //     <div>
+    //       <button class="dropbtnparameters" onclick="showParameter('uniqueID')"> Parameters </button>
+    //       <div id=uniqueID class="dropdown-content-parameters">
+    //         <div class="box">
+    //           <p>Hosts</p>
+    //           <input type="text" placeholder="host1:host2" df-host_names>
+    //         </div>
+    //         <div class="box">
+    //            <p>User</p>
+    //            <input type="text" placeholder="jon" df-user_name>
+    //          </div>
+    //       </div>
+    //     </div>
+    //   </div>
+    //   <div>
+    //     <div class="title-box"><i class="fab fa-linux"></i> Unlock Hosts </div>
+    //     <div>
+    //       <button class="dropbtnparameters" onclick="showParameter('uniqueID')"> Parameters </button>
+    //       <div id=uniqueID class="dropdown-content-parameters">
+    //         <div class="box">
+    //           <p>Hosts</p>
+    //           <input type="text" placeholder="host1:host2" df-host_names>
+    //         </div>
+    //         <div class="box">
+    //            <p>User</p>
+    //            <input type="text" placeholder="jon" df-user_name>
+    //          </div>
+    //       </div>
+    //     </div>
+    //   </div>
+
+    // <div class="box">
+    //           <p>File Path</p>
+    //           <input type="text" placeholder="C:\Users\jon\" df-file_path>
+    //         </div>
+    //         <div class="box"> 
+    //           <p>File Name</p>
+    //           <input type="text" placeholder="file.txt " df-file_name>
+    //         </div>
+
+
+
+
+    // case 'locking_windows_host':
+    //       var locking_windows_host = `
+    //       <div>
+    //     <div class="title-box"><i class="fas fa-scroll"></i> Email Notification </div>
+    //     <div>
+    //       <button class="dropbtnparameters-other" onclick="showParameter('uniqueID')"> Parameters </button>
+    //       <div id=uniqueID class="dropdown-content-parameters">
+    //         <div class="box">
+    //           <p>Subject</p>
+    //           <input type="text" placeholder="email subject" df-email_subject>
+    //         </div>
+    //         <div class="box">
+    //           <p>Body</p>
+    //           <input type="text" placeholder="email body" df-email_body>
+    //         </div>
+    //         <div class="box">
+    //           <p>Attachments</p>
+    //           <input type="text" placeholder="/home/sam/test.txt" df-email_attachment>
+    //         </div>
+    //         <div class="box">
+    //           <p>Email Addresses</p>
+    //           <input type="text" placeholder="<e1@gmail.com>,<e2@gmail.com>" df-email_addresses>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+
+    // case 'locking_windows_host':
+    //       var locking_windows_host = `
+    //       <div>
+    //     <div class="title-box"><i class="fab fa-windows"></i> Unlock Hosts </div>
+    //     <div>
+    //       <button class="dropbtnparameters-windows" onclick="showParameter('uniqueID')"> Parameters </button>
+    //       <div id=uniqueID class="dropdown-content-parameters">
+    //         <div class="box">
+    //           <p>Hosts</p>
+    //           <input type="text" placeholder="host1:host2" df-host_names>
+    //         </div>
+    //         <div class="box">
+    //           <p>User</p>
+    //           <input type="text" placeholder="jon" df-user_name>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+
+    // case 'windows_firewall_playbook':
+    //       var windows_firewall_playbook = `
+    //       <div>
+    //     <div class="title-box"><i class="fab fa-windows"></i> Revoke Isolated Hosts </div>
+    //     <div>
+    //       <button class="dropbtnparameters-windows" onclick="showParameter('uniqueID')"> Parameters </button>
+    //       <div id=uniqueID class="dropdown-content-parameters">
+    //         <div class="box">
+    //           <p>Hosts</p>
+    //           <input type="text" placeholder="host1:host2" df-host_names>
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+    //   `;
+
+    //   case 'process_list_linux':
+    //     var process_list_linux = `
+    // <div>
+    //   <div class="title-box"><i class="fab fa-linux"></i> Process List </div>
+    // </div>
+    // `;
+    // editor.addNode('process_list_linux.yaml', 1, 1, pos_x, pos_y, 'process_list_linux', {}, process_list_linux);
+    // break;
+
+    //   case 'process_ports_windows':
+    //     var process_ports_windows = `
+    // <div>
+    //   <div class="title-box"><i class="fab fa-windows"></i> Process Ports </div>
+    // </div>
+    // `;
+    //     editor.addNode('process_ports_windows.yaml', 1, 1, pos_x, pos_y, 'process_ports_windows', {}, process_ports_windows);
+    //     break;
+
+    //   case 'process_list_windows':
+    //     var process_list_windows = `
+    // <div>
+    //   <div class="title-box"><i class="fab fa-windows"></i> Process List </div>
+    // </div>
+    // `;
+    //     editor.addNode('process_list_windows.yaml', 1, 1, pos_x, pos_y, 'process_list_windows', {}, process_list_windows);
+    //     break;
+
+    // case 'facebook':
+    //   var facebook = `
+    // <div>
+    //   <div class="title-box"><i class="fab fa-facebook"></i> Facebook Message</div>
+    // </div>
+    // `;
+    //   editor.addNode('facebook', 0, 1, pos_x, pos_y, 'facebook', {}, facebook);
+    //   break;
+    // case 'slack':
+    //   var slackchat = `
+    //   <div>
+    //     <div class="title-box"><i class="fab fa-slack"></i> Slack chat message</div>
+    //   </div>
+    //   `
+    //   editor.addNode('slack', 1, 0, pos_x, pos_y, 'slack', {}, slackchat);
+    //   break;
+    // case 'github':
+    //   var githubtemplate = `
+    //   <div>
+    //     <div class="title-box"><i class="fab fa-github "></i> Github Stars</div>
+    //     <div class="box">
+    //       <p>Enter repository url</p>
+    //     <input type="text" df-name>
+    //     </div>
+    //   </div>
+    //   `;
+    //   editor.addNode('github', 0, 1, pos_x, pos_y, 'github', { "name": '' }, githubtemplate);
+    //   break;
+    // case 'telegram':
+    //   var telegrambot = `
+    //   <div>
+    //     <div class="title-box"><i class="fab fa-telegram-plane"></i> Telegram bot</div>
+    //     <div class="box">
+    //       <p>Send to telegram</p>
+    //       <p>select channel</p>
+    //       <select df-channel>
+    //         <option value="channel_1">Channel 1</option>
+    //         <option value="channel_2">Channel 2</option>
+    //         <option value="channel_3">Channel 3</option>
+    //         <option value="channel_4">Channel 4</option>
+    //       </select>
+    //     </div>
+    //   </div>
+    //   `;
+    //   editor.addNode('telegram', 1, 0, pos_x, pos_y, 'telegram', { "channel": 'channel_3' }, telegrambot);
+    //   break;
+    // case 'aws':
+    //   var aws = `
+    //   <div>
+    //     <div class="title-box"><i class="fab fa-aws"></i> Aws Save </div>
+    //     <div class="box">
+    //       <p>Save in aws</p>
+    //       <input type="text" df-db-dbname placeholder="DB name"><br><br>
+    //       <input type="text" df-db-key placeholder="DB key">
+    //       <p>Output Log</p>
+    //     </div>
+    //   </div>
+    //   `;
+    //   editor.addNode('aws', 1, 1, pos_x, pos_y, 'aws', { "db": { "dbname": '', "key": '' } }, aws);
+    //   break;
+    // case 'log':
+    //   var log = `
+    //     <div>
+    //       <div class="title-box"><i class="fas fa-file-signature"></i> Save log file </div>
+    //     </div>
+    //     `;
+    //   editor.addNode('log', 1, 0, pos_x, pos_y, 'log', {}, log);
+    //   break;
+    // case 'google':
+    //   var google = `
+    //     <div>
+    //       <div class="title-box"><i class="fab fa-google-drive"></i> Google Drive save </div>
+    //     </div>
+    //     `;
+    //   editor.addNode('google', 1, 0, pos_x, pos_y, 'google', {}, google);
+    //   break;
+    // case 'email':
+    //   var email = `
+    //     <div>
+    //       <div class="title-box"><i class="fas fa-at"></i> Send Email </div>
+    //     </div>
+    //     `;
+    //   editor.addNode('email', 1, 0, pos_x, pos_y, 'email', {}, email);
+    //   break;
+
+    // case 'template':
+    //   var template = `
+    //     <div>
+    //       <div class="title-box"><i class="fas fa-code"></i> Template</div>
+    //       <div class="box">
+    //         Ger Vars
+    //         <textarea df-template></textarea>
+    //         Output template with vars
+    //       </div>
+    //     </div>
+    //     `;
+    //   editor.addNode('template', 1, 1, pos_x, pos_y, 'template', { "template": 'Write your template' }, template);
+    //   break;
+    // case 'multiple':
+    //   var multiple = `
+    //     <div>
+    //       <div class="box">
+    //         Multiple!
+    //       </div>
+    //     </div>
+    //     `;
+    //   editor.addNode('multiple', 3, 4, pos_x, pos_y, 'multiple', {}, multiple);
+    //   break;
+    // case 'personalized':
+    //   var personalized = `
+    //     <div>
+    //       Personalized
+    //     </div>
+    //     `;
+    //   editor.addNode('personalized', 1, 1, pos_x, pos_y, 'personalized', {}, personalized);
+    //   break;
+    // case 'dbclick':
+    //   var dbclick = `
+    //     <div>
+    //     <div class="title-box"><i class="fas fa-mouse"></i> Db Click</div>
+    //       <div class="box dbclickbox" ondblclick="showpopup(event)">
+    //         Db Click here
+    //         <div class="modal" style="display:none">
+    //           <div class="modal-content">
+    //             <span class="close" onclick="closemodal(event)">&times;</span>
+    //             Change your variable {name} !
+    //             <input type="text" df-name>
+    //           </div>
+
+    //         </div>
+    //       </div>
+    //     </div>
+    //     `;
+    //   editor.addNode('dbclick', 1, 1, pos_x, pos_y, 'dbclick', { name: '' }, dbclick);
+    //   break;
+
+
+    var transform = '';
+    function showpopup(e) {
+      e.target.closest(".drawflow-node").style.zIndex = "9999";
+      e.target.children[0].style.display = "block";
+      //document.getElementById("modalfix").style.display = "block";
+
+      //e.target.children[0].style.transform = 'translate('+translate.x+'px, '+translate.y+'px)';
+      transform = editor.precanvas.style.transform;
+      editor.precanvas.style.transform = '';
+      editor.precanvas.style.left = editor.canvas_x + 'px';
+      editor.precanvas.style.top = editor.canvas_y + 'px';
+      console.log(transform);
+
+      //e.target.children[0].style.top  =  -editor.canvas_y - editor.container.offsetTop +'px';
+      //e.target.children[0].style.left  =  -editor.canvas_x  - editor.container.offsetLeft +'px';
+      editor.editor_mode = "fixed";
+
+    }
+
+    function closemodal(e) {
+      e.target.closest(".drawflow-node").style.zIndex = "2";
+      e.target.parentElement.parentElement.style.display = "none";
+      //document.getElementById("modalfix").style.display = "none";
+      editor.precanvas.style.transform = transform;
+      editor.precanvas.style.left = '0px';
+      editor.precanvas.style.top = '0px';
+      editor.editor_mode = "edit";
+    }
+
+    function changeModule(event) {
+      var all = document.querySelectorAll(".menu ul li");
+      for (var i = 0; i < all.length; i++) {
+        all[i].classList.remove('selected');
+      }
+      event.target.classList.add('selected');
+    }
+
+    function changeMode(option) {
+
+      //console.log(lock.id);
+      if (option == 'lock') {
+        lock.style.display = 'none';
+        unlock.style.display = 'block';
+      } else {
+        lock.style.display = 'block';
+        unlock.style.display = 'none';
+      }
+
+    }
+
+  </script>
+  </body>
+
+  </html>

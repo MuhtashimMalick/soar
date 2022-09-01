@@ -1,0 +1,82 @@
+<%- include("navbar.ejs")%>
+  <link rel="stylesheet" type="text/css" href="/stylesheets/playbook_logs.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/css/all.min.css"
+    integrity="sha256-h20CPZ0QyXlBuAw7A+KluUYx/3pK+c7lYEpqLTlxjYQ=" crossorigin="anonymous" />
+  <div class="wrapper">
+    <div class="dropdown">
+      <button class="dropbtn"><i class="fas fa-sort-numeric-down"></i></button>
+      <div class="dropdown-content">
+        <a href="/playbook_logs/all">all</a>
+        <a href="/playbook_logs/1">latest</a>        
+        <a href="/playbook_logs/5">5</a>
+        <a href="/playbook_logs/10">10</a>
+        <a href="/playbook_logs/20">20</a>
+        <a href="/playbook_logs/50">50</a>
+        <a href="/playbook_logs/100">100</a>
+      </div>
+    </div>
+    <table>
+      <tr>
+        <th>id</th>
+        <th>Playbook Name</th>
+        <th>Skipped</th>
+        <th>Ok</th>
+        <th>Dark</th>
+        <th>Failures</th>
+        <th>Ignored</th>
+        <th>Rescued</th>
+        <th>Processed</th>
+        <th>Changed</th>
+      </tr>
+      <% playbook_logs.forEach(function(log){ %>
+        <% for (let i=0; i < log.logs.length; i++) { %>
+          <tr id="id">
+            <td>
+              <%= log.id %>
+            </td>
+            <td>
+              <%= log.logs[i].playbook_name %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.skipped).length})\n ${Object.keys(log.logs[i].data.skipped)}` %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.ok).length})\n ${Object.keys(log.logs[i].data.ok)}` %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.dark).length})\n ${Object.keys(log.logs[i].data.dark)}` %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.failures).length})\n ${Object.keys(log.logs[i].data.failures)}` %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.ignored).length})\n ${Object.keys(log.logs[i].data.ignored)}` %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.rescued).length})\n ${Object.keys(log.logs[i].data.rescued)}` %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.processed).length})\n ${Object.keys(log.logs[i].data.processed)}` %>
+            </td>
+            <td>
+              <%= `(${Object.keys(log.logs[i].data.changed).length})\n ${Object.keys(log.logs[i].data.changed)}` %>
+            </td>
+          </tr>
+          <% } %>
+            <% }) %>
+    </table>
+  </div>
+  </body>
+  <script>
+    // var playbookLogs = <%- JSON.stringify(playbook_logs) %>;
+    // console.log(playbookLogs)
+    function toggleShow() {
+      document.getElementById("id").classList.toggle("show");
+      document.getElementById("id").classList.toggle("show-button");
+    }
+  // var playbookLogs = <%- JSON.stringify(playbook_logs) %>;
+  // console.log(Object.keys(playbookLogs[0].logs[0].data.dark))
+  // "jon":1,"jerry":1,"tom":1,"smith":1,"muhtashim":1,"malick":1,"tom":1,"smith":1,"sam":1,"samsung":1,"hamza":1,"bilal":1,
+  </script>
+
+  </html>
